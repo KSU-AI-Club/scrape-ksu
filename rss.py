@@ -4,37 +4,47 @@
 # then <start xmlns="events"> is the event date, this can be parsed into a datetime format or just left as is
 # then <end xmlns="events"> is the end date
 
-import xml.etree.ElementTree as ET
+import feedparser 
+import re
+
+
+class event:
+    title = ""
+    description = ""
+    startDate = "" # could be some kind of datetime?
+    endDate = ""
+    link = ""
+
+    # make SURE we pass an empty string as a method param if there's something missing
+    def __init__(self, params):
+        self.title = params[0]
+        self.description = params[1]
+        self.startDate = params[2] # could be some kind of datetime?
+        self.endDate = params[3]
+        self.link = params[4]
+
+    def __str__(self):
+        return (f"Title: {self.title}\n"
+                f"Description: {self.description}\n"
+                f"Start Date: {self.startDate}\n"
+                f"End Date: {self.endDate}\n"
+                f"Link: {self.link}")
 
 class RSSparser:
-    class event:
-        title = ""
-        description = ""
-        startDate = "" # could be some kind of datetime?
-        endDate = ""
-        link = ""
-
-        # make SURE we pass an empty string as a method param if there's something missing
-        def __init__(self, params):
-            title = params[0]
-            description = params[1]
-            startDate = params[2] # could be some kind of datetime?
-            endDate = params[3]
-            link = params[4]
-
-    # we will store them all in here
+    
     events = []
-#    def __init__(self):
-         
+
+    def dehtmlify(self, doc):
+        p = re.compile('<.*?>')
+        return re.sub(p, "", doc).replace("&nbsp;", " ")
+
 
     def scrape(self):
-        tree = ET.parse("./events.rss")
-        parser = ET.XMLPullParser(['start', 'end'])
-        parser.feed('<mytag>sometext')
-        list(parser.read_events())
-        root = tree.getroot()
-        for neighbor in root.iter('item'):
-            print(neighbor.find('title').text)
-        
+        feed_url = "https://owllife.kennesaw.edu/events.rss" 
+        blog_feed = feedparser.parse(feed_url) 
+        for entry in blog_feed.entries:
+            self.events.append(event([entry.title, self.dehtmlify(entry.description), entry.start, entry.end, entry.link]))
+         
+        print(self.events[100].title)
 r = RSSparser()
 r.scrape()
